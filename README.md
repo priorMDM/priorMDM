@@ -1,5 +1,7 @@
 ### Code is coming soon 👯
 
+### Please visit our project page https://priormdm.github.io/priorMDM-page/
+
 <!--
 **priorMDM/priorMDM** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
