@@ -135,7 +135,7 @@ Download the model(s) you wish to use, then unzip and place it in `./save/`.
   <summary><b>ComMDM (two-person)</b></summary>
 
 * [pw3d_text](https://drive.google.com/file/d/1QFIEUd8TEto0AoVQnzsWflrrbHJBZJOG/view?usp=share_link) (for text-to-motion)
-* [pw3d_prefix](https://drive.google.com/file/d/1DOO6ZmNQtjHJPmS9hI4Wu3VIags5_bun/view?usp=share_link) (for prefix completion)
+* [pw3d_prefix](https://drive.google.com/file/d/10DL9iOr5VlgsikTVvV_sJ8oX86ycd9xE/view?usp=share_link) (for prefix completion)
 
 </details>
 
