@@ -96,7 +96,7 @@ cp -r ../HumanML3D/HumanML3D ./dataset/HumanML3D
 
 **BABEL dataset**
 
-Download the processed version [here](https://drive.google.com/file/d/1HXICASOJQUKxMQos249sp3ho1HVwuWB9/view?usp=share_link), and place it at `./dataset/babel`
+Download the processed version [here](https://drive.google.com/file/d/18a4eRh8mbIFb55FMHlnmI8B8tSTkbp4t/view?usp=share_link), and place it at `./dataset/babel`
 
 **SMPLH dependencies**
 
