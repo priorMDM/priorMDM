@@ -203,10 +203,10 @@ class GaussianDiffusion:
 
         self.l2_loss = lambda a, b: (a - b) ** 2  # th.nn.MSELoss(reduction='none')  # must be None for handling mask later on.
 
-        self.transform = SlimSMPLTransform(batch_size=batch_size, name='SlimSMPLTransform', ename='smplnh',
-                                      normalization=True)  # data_loader.dataset.transform
-
-        self.Datastruct = self.transform.SlimDatastruct
+        if self.lambda_rcxyz or self.lambda_vel_rcxyz or self.lambda_fc or self.lambda_vel:  # TODO - for Babel dataset only
+            self.transform = SlimSMPLTransform(batch_size=batch_size, name='SlimSMPLTransform', ename='smplnh',
+                                          normalization=True)  # data_loader.dataset.transform
+            self.Datastruct = self.transform.SlimDatastruct
 
     def masked_l2(self, a, b, mask):
         # assuming a.shape == b.shape == bs, J, Jdim, seqlen

@@ -246,8 +246,8 @@ def add_evaluation_options(parser):
                        help="For classifier-free sampling - specifies the s parameter, as defined in the paper.")
     group.add_argument("--transition_margins", default=0, type=int,
                        help="For evaluation - take margin around transition")
-    group.add_argument("--eval_on", required=True, type=str, choices=['motion', 'transition'],
-                       help="For evaluation - choose to eval over motion or transition")
+    group.add_argument("--eval_on", default='motion', type=str, choices=['motion', 'transition'],
+                       help="For evaluation - choose to eval over motion or transition")  # TODO - for DoubleTake only
 
 
 def add_frame_sampler_options(parser):

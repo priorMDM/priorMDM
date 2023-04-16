@@ -51,7 +51,7 @@ class TrainLoop:
         self.global_batch = self.batch_size # * dist.get_world_size()
         self.num_steps = args.num_steps
         self.num_epochs = self.num_steps // len(self.data) + 1
-        self.is_multi = hasattr(self.args, 'multi_block')
+        self.is_multi = hasattr(self.args, 'multi_arch')
 
         self.sync_cuda = torch.cuda.is_available()
 
