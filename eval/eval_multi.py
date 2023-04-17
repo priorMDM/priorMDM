@@ -9,7 +9,7 @@ import utils.rotation_conversions as geometry
 from model.cfg_sampler import UnconditionedModel
 from utils import dist_util
 from utils.fixseed import fixseed
-from utils.model_util import create_model_and_diffusion, load_model_wo_clip
+from utils.model_util import create_com_model_and_diffusion, load_model_wo_clip
 from utils.parser_util import evaluation_multi_parser
 from diffusion import logger
 
@@ -156,12 +156,9 @@ def evaluate_multi(model, diffusion, data, vis_dir=None):
 if __name__ == '__main__':
     args = evaluation_multi_parser()
     fixseed(args.seed)
-    args.batch_size = 32 # This must be 32! Don't change it! otherwise it will cause a bug in R precision calc!
     name = os.path.basename(os.path.dirname(args.model_path))
     niter = os.path.basename(args.model_path).replace('model', '').replace('.pt', '')
-    log_file = os.path.join(os.path.dirname(args.model_path), '..', 'eval_prefix_{}_{}'.format(name, niter))
-    # if args.guidance_param != 1.:
-    #     log_file += f'_gscale{args.guidance_param}'
+    log_file = os.path.join(os.path.dirname(args.model_path), 'eval_prefix_{}_{}'.format(name, niter))
     n_samples = 1000
     log_file += f'_{args.eval_mode}'
     log_file += f'_{n_samples}samples'
@@ -171,14 +168,12 @@ if __name__ == '__main__':
     logger.configure()
 
     logger.log("creating data loader...")
-    split = 'test'
 
-    # eval_data = get_dataset_loader(name=args.multi_dataset, batch_size=n_samples, num_frames=None,
     eval_data = get_dataset_loader(name=args.multi_dataset, batch_size=n_samples, num_frames=None,
-                                   load_mode=args.multi_train_mode)
+                                   split=args.multi_eval_splits, load_mode=args.multi_train_mode)
 
     logger.log("Creating model and diffusion...")
-    model, diffusion = create_model_and_diffusion(args, eval_data)
+    model, diffusion = create_com_model_and_diffusion(args, eval_data)
 
     logger.log(f"Loading checkpoints from [{args.model_path}]...")
     state_dict = torch.load(args.model_path, map_location='cpu')

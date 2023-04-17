@@ -100,13 +100,10 @@ class TrainLoop:
                     args.eval_num_samples, scale=1., num_unfoldings=1,
                 )
             }
-        elif self.is_multi and args.multi_dataset == 'pw3d' and args.eval_during_training:
+        elif self.is_multi and args.multi_dataset == 'pw3d' and args.multi_train_mode == 'prefix' and args.eval_during_training:
             n_samples = 256
             self.eval_data = get_dataset_loader(name=args.multi_dataset, batch_size=n_samples, num_frames=None,
-                                            split=args.multi_eval_splits,
-                                            load_mode=args.multi_train_mode)
-
-
+                                                split=args.multi_eval_splits, load_mode=args.multi_train_mode)
 
         self.use_ddp = False
         self.ddp_model = self.model

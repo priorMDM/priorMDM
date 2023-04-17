@@ -14,7 +14,7 @@ Please visit our [**webpage**](https://priormdm.github.io/priorMDM-page/) for mo
 |  | Training | Generation | Evaluation |
 | --- | ----------- | ----------- | ----------- |
 | **DoubleTake (long motion)** | ✅ | ✅ | ETA May 23 |
-| **ComMDM (two-person)** | ✅ | ✅ | ETA May 23 |
+| **ComMDM (two-person)** | ✅ | ✅ | ✅ |
 | **Fine-tuned motion control** | ETA May 23 | ETA May 23 | ETA May 23 |
 
 ## News
@@ -25,7 +25,7 @@ Please visit our [**webpage**](https://priormdm.github.io/priorMDM-page/) for mo
 
 This code was tested on `Ubuntu 18.04.5 LTS` and requires:
 
-* Python 3.7
+* Python 3.8
 * conda3 or miniconda3
 * CUDA capable GPU (one is enough)
 
@@ -96,7 +96,7 @@ cp -r ../HumanML3D/HumanML3D ./dataset/HumanML3D
 
 **BABEL dataset**
 
-Download the processed version [here](https://drive.google.com/file/d/1HXICASOJQUKxMQos249sp3ho1HVwuWB9/view?usp=share_link), and place it at `./dataset/babel`
+Download the processed version [here](https://drive.google.com/file/d/18a4eRh8mbIFb55FMHlnmI8B8tSTkbp4t/view?usp=share_link), and place it at `./dataset/babel`
 
 **SMPLH dependencies**
 
@@ -276,9 +276,8 @@ python -m train.train_mdm_multi --pretrained_path ./save/humanml_trans_enc_512/m
 Download the pretrained model for prefix training [from here](https://drive.google.com/file/d/1PrUoHIiM1ICvL_oOBsB-J6YVJ1kzVRu_/view?usp=share_link) and place it in `./save/`. Then train with:
 
 ```shell
-python -m train.train_mdm_multi --pretrained_path ./save/humanml_trans_enc_512_prefix_finetune/model000330000.pt --multi_train_mode prefix --save_dir ./save/my_pw3d_prefix
+python -m train.train_mdm_multi --pretrained_path ./save/humanml_trans_enc_512_prefix_finetune/model000330000.pt --multi_train_mode prefix --save_dir ./save/my_pw3d_prefix --save_interval 10000
 ```
-
 
 </details>
 
@@ -286,12 +285,25 @@ python -m train.train_mdm_multi --pretrained_path ./save/humanml_trans_enc_512_p
 
 * Use `--device` to define GPU id.
 * Add `--train_platform_type {ClearmlPlatform, TensorboardPlatform}` to track results with either [ClearML](https://clear.ml/) or [Tensorboard](https://www.tensorflow.org/tensorboard).
+* Add `--eval_during_training` to run a short evaluation for each saved checkpoint. 
+  This will slow down training but will give you better monitoring.
 
 ## Evaluate
 
 **DoubleTake (long motions)** - ETA May 23
 
-**ComMDM (two-person)** - ETA May 23
+<details>
+<summary><b>ComMDM (two-person)</b></summary>
+
+The reported evaluation for prefix completion is in `./save/pw3d_prefix/eval_prefix_pw3d_paper_results_000240000_wo_mm_1000samples.log`.
+
+To reproduce evaluation run:
+
+```shell
+python -m eval.eval_multi --model_path ./save/pw3d_prefix/model000240000.pt
+```
+
+</details>
 
 **Fine-tuned motion control** - ETA May 23
 
