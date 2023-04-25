@@ -48,10 +48,10 @@ def get_collate_fn(name, load_mode='train'):
         return all_collate
 
 
-def get_dataset(name, num_frames, split='train', load_mode='train', batch_size=None, opt=None, short_db=False, cropping_sampler=False):
+def get_dataset(name, num_frames, split='train', load_mode='train', batch_size=None, opt=None, short_db=False, cropping_sampler=False, size=None):
     DATA = get_dataset_class(name, load_mode)
     if name in ["humanml", "kit", "pw3d"]:
-        dataset = DATA(split=split, num_frames=num_frames, load_mode=load_mode)
+        dataset = DATA(split=split, num_frames=num_frames, load_mode=load_mode, size=size)
     elif name == "babel":
         from data_loaders.amass.transforms import SlimSMPLTransform
         if ((split=='val') and (cropping_sampler==True)):
@@ -69,10 +69,10 @@ def get_dataset(name, num_frames, split='train', load_mode='train', batch_size=N
     return dataset
 
 
-def get_dataset_loader(name, batch_size, num_frames, split='train', load_mode='train', opt=None, short_db=False, cropping_sampler=False):
+def get_dataset_loader(name, batch_size, num_frames, split='train', load_mode='train', opt=None, short_db=False, cropping_sampler=False, size=None):
     if load_mode == 'text_only':
         load_mode = 'train'
-    dataset = get_dataset(name, num_frames, split, load_mode, batch_size, opt, short_db, cropping_sampler)
+    dataset = get_dataset(name, num_frames, split, load_mode, batch_size, opt, short_db, cropping_sampler, size)
     collate = get_collate_fn(name, load_mode)
 
     n_workers = 1 if load_mode in ['movement_train', 'evaluator_train'] else 8

@@ -1,9 +1,30 @@
+import torch
+from diffusion.inpainting_gaussian_diffusion import InpaintingGaussianDiffusion
+from model.cfg_sampler import wrap_model
 from model.comMDM import ComMDM
 from model.mdm import MDM
 from model.DoubleTake_MDM import doubleTake_MDM
 from diffusion import gaussian_diffusion as gd
 from diffusion.respace import SpacedDiffusion, space_timesteps
+from model.model_blending import ModelBlender
 
+def load_model_blending_and_diffusion(args_list, data, device, ModelClass=MDM, DiffusionClass=gd.GaussianDiffusion):
+    models = [load_model(args, data, device, ModelClass)[0] for args in args_list]
+    model = ModelBlender(models, [1/len(models)]*len(models)) if len(models) > 1 else models[0]
+    
+    _, diffusion = create_model_and_diffusion(args_list[0], data, DiffusionClass=DiffusionClass)
+    return model, diffusion
+
+def load_model(args, data, device, ModelClass=MDM):
+    model, diffusion = create_model_and_diffusion(args, data, ModelClass=ModelClass)
+    model_path = args.model_path
+    print(f"Loading checkpoints from [{model_path}]...")
+    state_dict = torch.load(model_path, map_location='cpu')
+    load_model_wo_clip(model, state_dict)
+    model.to(device)
+    model.eval()  # disable random masking
+    model = wrap_model(model, args)
+    return model, diffusion
 
 def load_model_wo_clip(model, state_dict):
     missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
@@ -37,16 +58,11 @@ def load_split_mdm(model, state_dict, cutting_point):
     assert len(unexpected_keys) == 0
     assert all([k.startswith('clip_model.') or k.startswith('multi_person.') for k in missing_keys])
 
-def create_model_and_diffusion(args, data):
-    model = doubleTake_MDM(**get_model_args(args, data))
-    diffusion = create_gaussian_diffusion(args)
-    return model, diffusion
 
-def create_com_model_and_diffusion(args, data):
-    model = ComMDM(**get_model_args(args, data))
-    diffusion = create_gaussian_diffusion(args)
+def create_model_and_diffusion(args, data, ModelClass=MDM, DiffusionClass=SpacedDiffusion):
+    model = ModelClass(**get_model_args(args, data))
+    diffusion = create_gaussian_diffusion(args, DiffusionClass)
     return model, diffusion
-
 
 def get_model_args(args, data):
 
@@ -85,7 +101,7 @@ def get_model_args(args, data):
             'trans_emb': args.trans_emb, 'concat_trans_emb': args.concat_trans_emb, 'args': args}
 
 
-def create_gaussian_diffusion(args):
+def create_gaussian_diffusion(args, DiffusionClass=SpacedDiffusion):
     # default params
     predict_xstart = True  # we always predict x_start (a.k.a. x0), that's our deal!
     steps = args.diffusion_steps
@@ -107,7 +123,7 @@ def create_gaussian_diffusion(args):
     else:
         multi_train_mode = None
 
-    return SpacedDiffusion(
+    return DiffusionClass(
         use_timesteps=space_timesteps(steps, timestep_respacing),
         betas=betas,
         model_mean_type=(
@@ -127,6 +143,6 @@ def create_gaussian_diffusion(args):
         lambda_vel=args.lambda_vel,
         lambda_rcxyz=args.lambda_rcxyz,
         lambda_fc=args.lambda_fc,
-        batch_size = args.batch_size,
+        batch_size=args.batch_size,
         multi_train_mode=multi_train_mode,
     )

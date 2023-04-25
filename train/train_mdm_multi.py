@@ -5,12 +5,13 @@ Train a diffusion model on images.
 
 import os
 import json
+from model.comMDM import ComMDM
 from utils.fixseed import fixseed
 from utils.parser_util import train_multi_args
 from utils import dist_util
 from train.training_loop import TrainLoop
 from data_loaders.get_data import get_dataset_loader
-from utils.model_util import create_com_model_and_diffusion, load_model_wo_clip, load_pretrained_mdm, load_split_mdm
+from utils.model_util import create_model_and_diffusion, load_model_wo_clip, load_pretrained_mdm, load_split_mdm
 from train.train_platforms import ClearmlPlatform, TensorboardPlatform, NoPlatform  # required for the eval operation
 import torch
 
@@ -41,7 +42,8 @@ def main():
     data = get_dataset_loader(name=args.multi_dataset, batch_size=args.batch_size, num_frames=args.num_frames, split=args.multi_train_splits, load_mode=args.multi_train_mode)
 
     print("Creating model and diffusion...")
-    model, diffusion = create_com_model_and_diffusion(args, data)
+    ModelClass = ComMDM
+    model, diffusion = create_model_and_diffusion(args, data, ModelClass)
 
     print(f"Loading checkpoints from [{args.pretrained_path}]...")
     state_dict = torch.load(args.pretrained_path, map_location='cpu')

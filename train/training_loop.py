@@ -16,8 +16,9 @@ from diffusion.resample import LossAwareSampler, UniformSampler
 from tqdm import tqdm
 from diffusion.resample import create_named_schedule_sampler
 from data_loaders.humanml.networks.evaluator_wrapper import EvaluatorMDMWrapper
-from eval import eval_humanml, eval_humanact12_uestc, eval_multi
+from eval import eval_humanact12_uestc, eval_humanml_double_take, eval_multi
 from data_loaders.get_data import get_dataset_loader
+from utils.misc import load_model_wo_clip
 
 
 # For ImageNet experiments, this was a good default value.
@@ -94,7 +95,7 @@ class TrainLoop:
                                                    load_mode='gt')
             self.eval_wrapper = EvaluatorMDMWrapper(args.dataset, dist_util.dev())
             self.eval_data = {
-                'test': lambda: eval_humanml.get_mdm_loader(
+                'test': lambda: eval_humanml_double_take.get_mdm_loader(
                     args, model, diffusion, args.eval_batch_size,
                     gen_loader, mm_num_samples, mm_num_repeats, gen_loader.dataset.opt.max_motion_length,
                     args.eval_num_samples, scale=1., num_unfoldings=1,
@@ -114,11 +115,9 @@ class TrainLoop:
         if resume_checkpoint:
             self.resume_step = parse_resume_step_from_filename(resume_checkpoint)
             logger.log(f"loading model from checkpoint: {resume_checkpoint}...")
-            self.model.load_state_dict(
-                dist_util.load_state_dict(
-                    resume_checkpoint, map_location=dist_util.dev()
-                )
-            )
+            state_dict = torch.load(resume_checkpoint, map_location='cpu')
+            load_model_wo_clip(self.model, state_dict)
+            self.model.to(dist_util.dev())
 
     def _load_optimizer_state(self):
         main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
@@ -181,7 +180,7 @@ class TrainLoop:
             log_file = os.path.join(self.save_dir, f'eval_humanml_{(self.step + self.resume_step):09d}.log')
             diversity_times = 300
             mm_num_times = 0  # mm is super slow hence we won't run it during training
-            eval_dict = eval_humanml.evaluation(
+            eval_dict = eval_humanml_double_take.evaluation(
                 self.eval_wrapper, self.eval_gt_data, self.eval_data, log_file,
                 replication_times=self.args.eval_rep_times, diversity_times=diversity_times, mm_num_times=mm_num_times, run_mm=False)
             print(eval_dict)

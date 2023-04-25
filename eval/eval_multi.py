@@ -5,11 +5,12 @@ import numpy as np
 
 from data_loaders.get_data import get_dataset_loader
 from data_loaders.humanml.scripts.motion_process import recover_from_ric
+from model.comMDM import ComMDM
 import utils.rotation_conversions as geometry
 from model.cfg_sampler import UnconditionedModel
 from utils import dist_util
 from utils.fixseed import fixseed
-from utils.model_util import create_com_model_and_diffusion, load_model_wo_clip
+from utils.model_util import load_model, load_model_wo_clip
 from utils.parser_util import evaluation_multi_parser
 from diffusion import logger
 
@@ -173,13 +174,9 @@ if __name__ == '__main__':
                                    split=args.multi_eval_splits, load_mode=args.multi_train_mode)
 
     logger.log("Creating model and diffusion...")
-    model, diffusion = create_com_model_and_diffusion(args, eval_data)
-
-    logger.log(f"Loading checkpoints from [{args.model_path}]...")
-    state_dict = torch.load(args.model_path, map_location='cpu')
-    load_model_wo_clip(model, state_dict)
-    model.to(dist_util.dev())
-    model.eval()  # disable random masking
+    args.guidance_param = 0
+    model, diffusion = load_model(args, eval_data, dist_util.dev(), ModelClass=ComMDM)
+    
     eval_dict = evaluate_multi(model, diffusion, eval_data, vis_dir=args.model_path.replace('.pt', '_vis'))
     with open(log_file, 'w') as f:
         # json.dump(eval_dict, f, indent=4)

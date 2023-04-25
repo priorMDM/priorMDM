@@ -1,4 +1,6 @@
-from utils.parser_util import evaluation_parser
+from model.DoubleTake_MDM import doubleTake_MDM
+from model.mdm import MDM
+from utils.parser_util import evaluation_double_take_parser
 from utils.fixseed import fixseed
 from datetime import datetime
 from data_loaders.humanml.motion_loaders.model_motion_loaders import get_mdm_loader  # get_motion_loader
@@ -7,7 +9,7 @@ from data_loaders.humanml.networks.evaluator_wrapper import EvaluatorMDMWrapper
 from collections import OrderedDict
 from data_loaders.humanml.scripts.motion_process import *
 from data_loaders.humanml.utils.utils import *
-from utils.model_util import create_model_and_diffusion, load_model_wo_clip
+from utils.model_util import load_model
 
 from diffusion import logger
 from utils import dist_util
@@ -227,7 +229,7 @@ def evaluation(eval_wrapper, gt_loader, eval_motion_loaders, log_file, replicati
 
 
 if __name__ == '__main__':
-    args = evaluation_parser()
+    args = evaluation_double_take_parser()
     fixseed(args.seed)
     args.batch_size = 32 # This must be 32! Don't change it! otherwise it will cause a bug in R precision calc!
     name = os.path.basename(os.path.dirname(args.model_path))
@@ -297,16 +299,8 @@ if __name__ == '__main__':
     num_actions = gen_loader.dataset.num_actions
 
     logger.log("Creating model and diffusion...")
-    model, diffusion = create_model_and_diffusion(args, gen_loader)
-
-    logger.log(f"Loading checkpoints from [{args.model_path}]...")
-    state_dict = torch.load(args.model_path, map_location='cpu')
-    load_model_wo_clip(model, state_dict)
-
-    if args.guidance_param != 1:
-        model = ClassifierFreeSampleModel(model)   # wrapping model with the classifier-free sampler
-    model.to(dist_util.dev())
-    model.eval()  # disable random masking
+    ModelClass = doubleTake_MDM if args.double_take else MDM
+    model, diffusion = load_model(args, data, dist_util.dev(), ModelClass=doubleTake_MDM)
 
     eval_motion_loaders = {
         ################

@@ -5,12 +5,13 @@ numpy array. This can be used to produce samples for FID evaluation.
 """
 from data_loaders import humanml_utils
 from eval.eval_multi import extract_motions
+from model.comMDM import ComMDM
 from utils.fixseed import fixseed
 import os
 import numpy as np
 import torch
 from utils.parser_util import edit_multi_args
-from utils.model_util import create_com_model_and_diffusion, load_model_wo_clip, load_split_mdm
+from utils.model_util import create_com_model_and_diffusion, load_model, load_model_wo_clip, load_split_mdm
 from utils import dist_util
 from model.cfg_sampler import UnconditionedModel
 from data_loaders.get_data import get_dataset_loader
@@ -46,16 +47,8 @@ def main():
     total_num_samples = args.num_samples * args.num_repetitions
 
     print("Creating model and diffusion...")
-    model, diffusion = create_com_model_and_diffusion(args, data)
-
-    print(f"Loading checkpoints from [{args.model_path}]...")
-    state_dict = torch.load(args.model_path, map_location='cpu')
-    load_model_wo_clip(model, state_dict)
-    model = UnconditionedModel(model)
-
-
-    model.to(dist_util.dev())
-    model.eval()  # disable random masking
+    args.guidance_param = 0
+    model, diffusion = load_model(args, data, dist_util.dev(), ModelClass=ComMDM)
 
     iterator = iter(data)
     input_motions, model_kwargs = next(iterator)

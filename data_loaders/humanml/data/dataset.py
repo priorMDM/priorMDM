@@ -215,12 +215,12 @@ class Text2MotionDataset(data.Dataset):
 
 '''For use of training text motion matching model, and evaluations'''
 class Text2MotionDatasetV2(data.Dataset):
-    def __init__(self, opt, mean, std, split_file, w_vectorizer, **kwargs):
+    def __init__(self, opt, mean, std, split_file, w_vectorizer, num_frames, size=None, **kwargs):
         self.opt = opt
         self.w_vectorizer = w_vectorizer
         self.max_length = 20
         self.pointer = 0
-        self.num_frames = kwargs.get('num_frames', False)
+        self.num_frames = num_frames if num_frames else False
         self.max_motion_length = opt.max_motion_length
         if (self.num_frames == False) or type(self.num_frames)==int:
             min_motion_len = 40 if self.opt.dataset_name =='t2m' else 24
@@ -232,7 +232,7 @@ class Text2MotionDatasetV2(data.Dataset):
         with cs.open(split_file, 'r') as f:
             for line in f.readlines():
                 id_list.append(line.strip())
-        # id_list = id_list[:200]
+        id_list = id_list[:size]
 
         new_name_list = []
         length_list = []
@@ -297,10 +297,10 @@ class Text2MotionDatasetV2(data.Dataset):
                     if self.num_frames != False:
                         if len(motion) >= self.max_motion_length:
                             bias = random.randint(0, len(motion) - self.max_motion_length)
-                            data_dict[new_name] = {'motion': motion[bias: bias + self.max_motion_length],
+                            data_dict[name] = {'motion': motion[bias: bias + self.max_motion_length],
                                                    'length': self.max_motion_length,
                                                    'text': [text_dict]}
-                            length_list.append(len(self.max_motion_length))
+                            length_list.append(self.max_motion_length)
 
                         else:
                             data_dict[name] = {'motion': motion,
@@ -315,7 +315,8 @@ class Text2MotionDatasetV2(data.Dataset):
                         length_list.append(len(motion))
 
                     new_name_list.append(name)
-            except:
+            except Exception as e:
+                print(e)
                 pass
 
         name_list, length_list = zip(*sorted(zip(new_name_list, length_list), key=lambda x: x[1]))
@@ -388,13 +389,14 @@ class Text2MotionDatasetV2(data.Dataset):
                                      ], axis=0)
         # print(word_embeddings.shape, motion.shape)
         # print(tokens)
+        # FIXME: I removed the extra return value ([]) at the end
         return word_embeddings, pos_one_hots, caption, sent_len, motion, m_length, '_'.join(tokens), []
 
 
 
 '''For use of training text motion matching model, and evaluations'''
 class PW3D_Text2MotionDatasetV2(data.Dataset):
-    def __init__(self, opt, mean, std, splits, w_vectorizer):
+    def __init__(self, opt, mean, std, splits, w_vectorizer, **kwargs):
         self.opt = opt
         self.w_vectorizer = w_vectorizer
         self.max_length = 20
@@ -564,7 +566,7 @@ class PW3D_Text2MotionDatasetV2(data.Dataset):
         other_motion = np.concatenate((other_canon[None], other_motion), axis=0)
         m_length += 1 # since we added the cannon in the begining
 
-        return other_motion, pos_one_hots, caption, person_i, motion, m_length, '_'.join(tokens)
+        return other_motion, pos_one_hots, caption, person_i, motion, m_length, '_'.join(tokens), []
 
 
 '''For training BABEL text2motion evaluators'''
@@ -976,7 +978,7 @@ class RawTextDataset(data.Dataset):
         return word_embeddings, pos_one_hots, caption, sent_len
 
 class TextOnlyDataset(data.Dataset):
-    def __init__(self, opt, mean, std, split_file):
+    def __init__(self, opt, mean, std, split_file, size=None, **kwargs):
         self.mean = mean
         self.std = std
         self.opt = opt
@@ -991,7 +993,7 @@ class TextOnlyDataset(data.Dataset):
         with cs.open(split_file, 'r') as f:
             for line in f.readlines():
                 id_list.append(line.strip())
-        # id_list = id_list[:200]
+        id_list = id_list[:size]
 
         new_name_list = []
         length_list = []
@@ -1097,7 +1099,7 @@ class HumanML3D(data.Dataset):
 
         self.split_file = pjoin(opt.data_root, f'{split}.txt')
         if load_mode == 'text_only':
-            self.t2m_dataset = TextOnlyDataset(self.opt, self.mean, self.std, self.split_file)
+            self.t2m_dataset = TextOnlyDataset(self.opt, self.mean, self.std, self.split_file, **kwargs)
         else:
             self.w_vectorizer = WordVectorizer(pjoin(abs_base_path, 'glove'), 'our_vab')
 
@@ -1105,7 +1107,7 @@ class HumanML3D(data.Dataset):
                 self.t2m_dataset = PW3D_Text2MotionDatasetV2(self.opt, self.mean, self.std, self.split,
                                                              self.w_vectorizer)
             else:
-                self.t2m_dataset = Text2MotionDatasetV2(self.opt, self.mean, self.std, self.split_file, self.w_vectorizer)
+                self.t2m_dataset = Text2MotionDatasetV2(self.opt, self.mean, self.std, self.split_file, self.w_vectorizer, **kwargs)
             self.num_actions = 1 # dummy placeholder
 
         assert len(self.t2m_dataset) > 1, 'You loaded an empty dataset, ' \

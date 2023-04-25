@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader, Dataset
 from data_loaders.humanml.utils.get_opt import get_opt
-from data_loaders.humanml.motion_loaders.comp_v6_model_dataset import CompMDMGeneratedDataset, \
+from data_loaders.humanml.motion_loaders.comp_v6_model_dataset import CompMDMGeneratedDataset, CompMDMInpaintingGeneratedDataset, \
     CompMDMUnfoldingGeneratedDataset
 from data_loaders.humanml.utils.word_vectorizer import WordVectorizer
 import numpy as np
@@ -73,13 +73,15 @@ def get_motion_loader(opt_path, batch_size, ground_truth_dataset, mm_num_samples
     return motion_loader, mm_motion_loader
 
 # our loader
-def get_mdm_loader(args, model, diffusion, batch_size, ground_truth_loader, mm_num_samples, mm_num_repeats, max_motion_length, num_samples_limit, scale, num_unfoldings):
+def get_mdm_loader(args, model, diffusion, batch_size, ground_truth_loader, mm_num_samples, mm_num_repeats, max_motion_length, num_samples_limit, scale, num_unfoldings=0):
     opt = {
         'name': 'test',  # FIXME
     }
     print('Generating %s ...' % opt['name'])
     # dataset = CompMDMGeneratedDataset(opt, ground_truth_dataset, ground_truth_dataset.w_vectorizer, mm_num_samples, mm_num_repeats)
-    if num_unfoldings > 1:
+    if hasattr(args, "inpainting_mask") and args.inpainting_mask != '':
+        dataset = CompMDMInpaintingGeneratedDataset(args, model, diffusion, ground_truth_loader, mm_num_samples, mm_num_repeats, max_motion_length, num_samples_limit, scale)
+    elif num_unfoldings > 1:
         dataset = CompMDMUnfoldingGeneratedDataset(args, model, diffusion, ground_truth_loader, mm_num_samples, mm_num_repeats, max_motion_length, num_samples_limit, scale, num_unfoldings)
     else:
         dataset = CompMDMGeneratedDataset(args, model, diffusion, ground_truth_loader, mm_num_samples, mm_num_repeats, max_motion_length, num_samples_limit, scale)

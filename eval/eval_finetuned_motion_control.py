@@ -1,6 +1,6 @@
-from model.DoubleTake_MDM import doubleTake_MDM
-from model.mdm import MDM
-from utils.parser_util import evaluation_double_take_parser
+from diffusion.inpainting_gaussian_diffusion import InpaintingGaussianDiffusion
+from diffusion.respace import SpacedDiffusion
+from utils.parser_util import evaluation_inpainting_parser
 from utils.fixseed import fixseed
 from datetime import datetime
 from data_loaders.humanml.motion_loaders.model_motion_loaders import get_mdm_loader  # get_motion_loader
@@ -9,13 +9,12 @@ from data_loaders.humanml.networks.evaluator_wrapper import EvaluatorMDMWrapper
 from collections import OrderedDict
 from data_loaders.humanml.scripts.motion_process import *
 from data_loaders.humanml.utils.utils import *
-from utils.model_util import load_model
+from utils.model_util import load_model_blending_and_diffusion
 
 from diffusion import logger
 from utils import dist_util
 from data_loaders.get_data import get_dataset_loader
-from model.cfg_sampler import ClassifierFreeSampleModel
-from copy import deepcopy
+from model.cfg_sampler import wrap_model
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 
@@ -150,21 +149,9 @@ def evaluation(eval_wrapper, gt_loader, eval_motion_loaders, log_file, replicati
             mm_motion_loaders = {}
             motion_loaders['ground truth'] = gt_loader
             for motion_loader_name, motion_loader_getter in eval_motion_loaders.items():
-                motion_loader, mm_motion_loader = motion_loader_getter() #gets compv6 everytime
+                motion_loader, mm_motion_loader = motion_loader_getter()
                 motion_loaders[motion_loader_name] = motion_loader
                 mm_motion_loaders[motion_loader_name] = mm_motion_loader
-
-            # if hasattr(motion_loaders['vald'].dataset, 'num_steps_to_generate'): # if num_steps_to_generate -> doubletake
-            #     # For multi-step evaluation
-            #     for step_i in range(motion_loaders['vald'].dataset.num_steps_to_generate):
-            #         motion_loaders[f'step_{step_i}'] = deepcopy(motion_loaders['vald'])
-            #         motion_loaders[f'step_{step_i}'].dataset.step_to_eval = step_i #
-
-                # For transitions evaluation
-                # for step_i in range(1, motion_loaders['vald'].dataset.num_steps_to_generate):
-                #     motion_loaders[f'transition_{step_i}'] = deepcopy(motion_loaders['vald'])
-                #     motion_loaders[f'transition_{step_i}'].dataset.step_to_eval = step_i #
-                #     motion_loaders[f'transition_{step_i}'].dataset.transition = True
 
             print(f'==================== Replication {replication} ====================')
             print(f'==================== Replication {replication} ====================', file=f, flush=True)
@@ -242,43 +229,40 @@ def evaluation(eval_wrapper, gt_loader, eval_motion_loaders, log_file, replicati
 
 
 if __name__ == '__main__':
-    args = evaluation_double_take_parser()
+    args_list = evaluation_inpainting_parser()
+    args = args_list[0]
     fixseed(args.seed)
     args.batch_size = 32 # This must be 32! Don't change it! otherwise it will cause a bug in R precision calc!
     name = os.path.basename(os.path.dirname(args.model_path))
     niter = os.path.basename(args.model_path).replace('model', '').replace('.pt', '')
-    log_file = os.path.join(os.path.dirname(args.model_path), 'eval_babel_{}_{}'.format(name, niter))
+    log_file = os.path.join(os.path.dirname(args.model_path), 'eval_humanml_{}_{}'.format(name, niter))
     if args.guidance_param != 1.:
         log_file += f'_gscale{args.guidance_param}'
-    log_file += f'_{args.eval_on}'
+    if args.inpainting_mask != '':
+        log_file += f'_mask_{args.inpainting_mask}'
     log_file += f'_{args.eval_mode}'
-    log_file += f'_handshake_{args.handshake_size}'
-    if args.double_take:
-        log_file += f'_doubleTake_blend_{args.blend_len}'
-        log_file += f'_skipSteps_{args.skip_steps_double_take}'
-    log_file += f'_margins_{args.transition_margins}'
-    log_file += f'_10_short_margins_babel'
     log_file += '.log'
 
     print(f'Will save to log file [{log_file}]')
+    assert args.overwrite or not os.path.exists(log_file), "Log file already exists!"
 
     print(f'Eval mode [{args.eval_mode}]')
     if args.eval_mode == 'debug':
-        num_samples_limit = 100  # None means no limit (eval over all dataset)
-        run_mm = False
-        mm_num_samples = 0
-        mm_num_repeats = 0
-        mm_num_times = 0
-        diversity_times = 30
-        replication_times = 5  # about 3 Hrs
-    elif args.eval_mode == 'wo_mm':
-        num_samples_limit = 1000 #1000
+        num_samples_limit = 1000  # None means no limit (eval over all dataset)
         run_mm = False
         mm_num_samples = 0
         mm_num_repeats = 0
         mm_num_times = 0
         diversity_times = 300
-        replication_times = 10 # about 12 Hrs
+        replication_times = 5  # about 3 Hrs
+    elif args.eval_mode == 'wo_mm':
+        num_samples_limit = 1000
+        run_mm = False
+        mm_num_samples = 0
+        mm_num_repeats = 0
+        mm_num_times = 0
+        diversity_times = 300
+        replication_times = 20 # about 12 Hrs
     elif args.eval_mode == 'mm_short':
         num_samples_limit = 1000
         run_mm = True
@@ -289,34 +273,30 @@ if __name__ == '__main__':
         replication_times = 5  # about 15 Hrs
     else:
         raise ValueError()
+    
+    replication_times = replication_times if args.replication_times is None else args.replication_times
 
 
     dist_util.setup_dist(args.device)
     logger.configure()
 
     logger.log("creating data loader...")
-    split = 'val' # 'test' # No testset in BABEL
-    # eval on transitions
-    if args.eval_on == "transition":
-        gt_loader = get_dataset_loader(name=args.dataset, batch_size=args.batch_size, num_frames=(args.handshake_size + args.transition_margins, args.handshake_size + args.transition_margins), split=split, load_mode='gt', short_db=args.short_db, cropping_sampler=args.cropping_sampler)
-    # eval on intervals
-    elif args.eval_on == "motion":
-        gt_loader = get_dataset_loader(name=args.dataset, batch_size=args.batch_size, num_frames=(args.min_seq_len, args.max_seq_len), split=split, load_mode='gt', short_db=args.short_db, cropping_sampler=args.cropping_sampler)
-
-    gen_loader = get_dataset_loader(name=args.dataset, batch_size=args.batch_size, num_frames=(args.min_seq_len, args.max_seq_len), split=split, load_mode='eval', short_db=args.short_db, cropping_sampler=False)#args.cropping_sampler)
-    # num_actions = gen_loader.dataset.num_actions
+    split = 'test'
+    gt_loader = get_dataset_loader(name=args.dataset, batch_size=args.batch_size, num_frames=None, split=split, load_mode='gt')
+    gen_loader = get_dataset_loader(name=args.dataset, batch_size=args.batch_size, num_frames=None, split=split, load_mode='eval')
+    num_actions = gen_loader.dataset.num_actions
 
     logger.log("Creating model and diffusion...")
-    ModelClass = doubleTake_MDM if args.double_take else MDM
-    model, diffusion = load_model(args, data, dist_util.dev(), ModelClass=ModelClass)
+    DiffusionClass =  InpaintingGaussianDiffusion if args.filter_noise else SpacedDiffusion
+    model, diffusion = load_model_blending_and_diffusion(args_list, gen_loader, dist_util.dev(), DiffusionClass=DiffusionClass)
 
     eval_motion_loaders = {
         ################
         ## HumanML3D Dataset##
         ################
-        'vald': lambda: get_mdm_loader( args,
-            model, diffusion, args.batch_size,
-            gen_loader, mm_num_samples, mm_num_repeats, gt_loader.dataset.opt.max_motion_length, num_samples_limit, args.guidance_param, args.num_unfoldings
+        'vald': lambda: get_mdm_loader(
+            args, model, diffusion, args.batch_size,
+            gen_loader, mm_num_samples, mm_num_repeats, gt_loader.dataset.opt.max_motion_length, num_samples_limit, args.guidance_param
         )
     }
 

@@ -1,25 +1,32 @@
 from argparse import ArgumentParser
 import argparse
+from copy import deepcopy
 import os
 import json
 
 
-def parse_and_load_from_model(parser, multi=False):
+def parse_and_load_from_model(parser, **kwargs):
     # args according to the loaded model
     # do not try to specify them from cmd line since they will be overwritten
     add_data_options(parser)
     add_model_options(parser)
     add_diffusion_options(parser)
     args = parser.parse_args()
+    return load_from_model(args, parser, **kwargs)
+
+def load_from_model(args, parser, task=''):
     args_to_overwrite = []
     loaded_groups = ['dataset', 'model', 'diffusion']
-    if multi:
+    if task == 'multi':
         loaded_groups.append('multi_person')
+    elif task == 'inpainting' and args.inpainting_mask == '':
+        loaded_groups.append('inpainting')
+    model_path = args.model_path
+    
     for group_name in loaded_groups:
         args_to_overwrite += get_args_per_group_name(parser, args, group_name)
 
     # load args from model
-    model_path = get_model_path_from_args()
     args_path = os.path.join(os.path.dirname(model_path), 'args.json')
     assert os.path.exists(args_path), 'Arguments json file was not found!'
     with open(args_path, 'r') as fr:
@@ -35,6 +42,27 @@ def parse_and_load_from_model(parser, multi=False):
         args.guidance_param = 1
     return args
 
+def parse_and_load_from_multiple_models(parser, task=''):
+    # args according to the loaded model
+    # do not try to specify them from cmd line since they will be overwritten
+    add_data_options(parser)
+    add_model_options(parser)
+    add_diffusion_options(parser)
+    args = parser.parse_args()
+    model_paths = args.model_path.split(',')
+    args_list = []
+    for i in range(len(model_paths)):
+        new_args = deepcopy(args)
+        new_args.model_path = model_paths[i]
+        args_list.append(load_from_model(new_args, parser, task))
+    
+    if task == 'inpainting' and args.inpainting_mask == '':
+        inpainting_mask = ','.join([args.inpainting_mask for args in args_list])
+        for args in args_list:
+            args.inpainting_mask = inpainting_mask
+    print(f'Using inpainting mask: {args_list[0].inpainting_mask}')
+    return args_list
+
 
 def get_args_per_group_name(parser, args, group_name):
     for group in parser._action_groups:
@@ -42,16 +70,6 @@ def get_args_per_group_name(parser, args, group_name):
             group_dict = {a.dest: getattr(args, a.dest, None) for a in group._group_actions}
             return list(argparse.Namespace(**group_dict).__dict__.keys())
     return ValueError('group_name was not found.')
-
-
-def get_model_path_from_args():
-    try:
-        dummy_parser = ArgumentParser()
-        dummy_parser.add_argument('model_path')
-        dummy_args, _ = dummy_parser.parse_known_args()
-        return dummy_args.model_path
-    except:
-        raise ValueError('model_path argument must be specified.')
 
 
 def add_base_options(parser):
@@ -154,6 +172,20 @@ def add_multi_options(parser):
     parser.add_argument('--no_6dof', dest='predict_6dof', action='store_false')
     parser.set_defaults(predict_6dof=True)
 
+def add_inpainting_options(parser):
+    group = parser.add_argument_group('inpainting')
+    group.add_argument("--inpainting_mask", default='', type=str, 
+                       help="Comma separated list of masks to use. In sampling, if not specified, will load the mask from the used model/s. \
+                       Every element could be one of: \
+                           root, root_horizontal, in_between, prefix, upper_body, lower_body, \
+                           or one of the joints in the humanml body format: \
+                           pelvis, left_hip, right_hip, spine1, left_knee, right_knee, spine2, left_ankle, right_ankle, spine3, left_foot, \
+                            right_foot, neck, left_collar, right_collar, head, left_shoulder, right_shoulder, left_elbow, right_elbow, left_wrist, right_wrist,")
+    group.add_argument("--no_filter_noise", action='store_false', dest='filter_noise',
+                       help="When true, the noise will be filtered from the inpainted features.")
+    parser.set_defaults(filter_noise=True)
+
+
 
 def add_sampling_options(parser):
     group = parser.add_argument_group('sampling')
@@ -216,12 +248,8 @@ def add_generate_options(parser):
 
 def add_edit_options(parser):
     group = parser.add_argument_group('edit')
-    group.add_argument("--edit_mode", default='in_between', choices=['in_between', 'upper_body', 'trajectory', 'prefix'], type=str,
-                       help="Defines which parts of the input motion will be edited.\n"
-                            "(1) in_between - suffix and prefix motion taken from input motion, "
-                            "middle motion is generated.\n"
-                            "(2) upper_body - lower body joints taken from input motion, "
-                            "upper body is generated.")
+    group.add_argument("--edit_mode", default='in_between', type=str,
+                       help="Defines which parts of the input motion will be edited.")
     group.add_argument("--text_condition", default='', type=str,
                        help="Editing will be conditioned on this text prompt. "
                             "If empty, will perform unconditioned editing.")
@@ -230,6 +258,15 @@ def add_edit_options(parser):
     group.add_argument("--suffix_start", default=0.75, type=float,
                        help="For in_between editing - Defines the start of input suffix (ratio from all frames).")
 
+
+def add_edit_inpainting_options(parser):
+    add_inpainting_options(parser)
+    group = parser.add_argument_group('edit')
+    group.add_argument("--text_condition", default='', type=str,
+                       help="Editing will be conditioned on this text prompt. "
+                            "If empty, will perform unconditioned editing.")
+    group.add_argument("--show_input", action='store_true',
+                       help="If true, will show the motion from which the inpainting features were taken.")
 
 def add_evaluation_options(parser):
     group = parser.add_argument_group('eval')
@@ -246,8 +283,16 @@ def add_evaluation_options(parser):
                        help="For classifier-free sampling - specifies the s parameter, as defined in the paper.")
     group.add_argument("--transition_margins", default=0, type=int,
                        help="For evaluation - take margin around transition")
+    group.add_argument("--overwrite", action='store_true',
+                       help="If True, will delete the existing lof file (if it has the same name).")
+    group.add_argument("--replication_times", default=None, type=int,
+                       help="Number of evaluation iterations to apply.")
+
+
+def add_evaluation_double_take_options(parser):
+    group = parser.add_argument_group('eval_double_take')
     group.add_argument("--eval_on", default='motion', type=str, choices=['motion', 'transition'],
-                       help="For evaluation - choose to eval over motion or transition")  # TODO - for DoubleTake only
+                    help="For evaluation - choose to eval over motion or transition")
 
 
 def add_frame_sampler_options(parser):
@@ -274,7 +319,17 @@ def train_multi_args():
     add_base_options(parser)
     add_multi_options(parser)
     add_training_options(parser)
-    return parse_and_load_from_model(parser)
+    return parse_and_load_from_model(parser, task='multi')
+
+def train_inpainting_args():
+    parser = ArgumentParser()
+    add_base_options(parser)
+    add_data_options(parser)
+    add_model_options(parser)
+    add_diffusion_options(parser)
+    add_training_options(parser)
+    add_inpainting_options(parser)
+    return parser.parse_args()
 
 def generate_multi_args():
     parser = ArgumentParser()
@@ -283,7 +338,7 @@ def generate_multi_args():
     add_sampling_options(parser)
     add_multi_options(parser)
     add_generate_options(parser)
-    return parse_and_load_from_model(parser, multi=True)
+    return parse_and_load_from_model(parser, task='multi')
 
 def generate_args():
     parser = ArgumentParser()
@@ -302,9 +357,28 @@ def edit_args():
     add_base_options(parser)
     add_sampling_options(parser)
     add_edit_options(parser)
+    return parse_and_load_from_model(parser)
+
+
+def edit_inpainting_args():
+    parser = ArgumentParser()
+    # args specified by the user: (all other will be loaded from the model)
+    add_base_options(parser)
+    add_sampling_options(parser)
+    add_edit_inpainting_options(parser)
+    return parse_and_load_from_multiple_models(parser, task='inpainting')
+
+
+def edit_double_take_args():
+    parser = ArgumentParser()
+    # args specified by the user: (all other will be loaded from the model)
+    add_base_options(parser)
+    add_sampling_options(parser)
+    add_edit_options(parser)
     add_frame_sampler_options(parser)
     add_double_take_options(parser)
     return parse_and_load_from_model(parser)
+
 
 def edit_multi_args():
     parser = ArgumentParser()
@@ -321,9 +395,19 @@ def evaluation_parser():
     # args specified by the user: (all other will be loaded from the model)
     add_base_options(parser)
     add_evaluation_options(parser)
+    return parse_and_load_from_model(parser)
+
+
+def evaluation_double_take_parser():
+    parser = ArgumentParser()
+    # args specified by the user: (all other will be loaded from the model)
+    add_base_options(parser)
+    add_evaluation_options(parser)
     add_frame_sampler_options(parser)
     add_double_take_options(parser)
+    add_evaluation_double_take_options(parser)
     return parse_and_load_from_model(parser)
+
 
 def evaluation_multi_parser():
     parser = ArgumentParser()
@@ -331,8 +415,15 @@ def evaluation_multi_parser():
     add_base_options(parser)
     add_multi_options(parser)
     add_evaluation_options(parser)
-    return parse_and_load_from_model(parser, multi=True)
-    # return parse_and_load_from_model(parser)
+    return parse_and_load_from_model(parser, task='multi')
+
+def evaluation_inpainting_parser():
+    parser = ArgumentParser()
+    # args specified by the user: (all other will be loaded from the model)
+    add_base_options(parser)
+    add_evaluation_options(parser)
+    add_inpainting_options(parser)
+    return parse_and_load_from_multiple_models(parser, task='inpainting')
 
 def smplh_args():
     parser = ArgumentParser()

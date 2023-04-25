@@ -15,9 +15,11 @@ Please visit our [**webpage**](https://priormdm.github.io/priorMDM-page/) for mo
 | --- | ----------- | ----------- | ----------- |
 | **DoubleTake (long motion)** | ✅ | ✅ | ETA May 23 |
 | **ComMDM (two-person)** | ✅ | ✅ | ✅ |
-| **Fine-tuned motion control** | ETA May 23 | ETA May 23 | ETA May 23 |
+| **Fine-tuned motion control** | ✅ | ✅ | ✅ |
 
 ## News
+
+📢 **25/Apr/2023** - Full release of the fine-tuned motion control scripts.
 
 📢 **14/Apr/2023** - First release - DoubleTake/ComMDM - Training and generation with pre-trained models is available.
 
@@ -116,7 +118,7 @@ Download the processed version [here](https://drive.google.com/file/d/1INxPiUuyr
 
 </details>
 
-
+  **Fine-tuned motion control** - No extra dependencies.
 
 
 ### 4. Download the pretrained models
@@ -139,8 +141,17 @@ Download the model(s) you wish to use, then unzip and place it in `./save/`.
 
 </details>
 
-**Fine-tuned motion control** - ETA May 23
+<details>
+  <summary><b>Fine-tuned motion control</b></summary>
 
+* [root_horizontal_control](https://drive.google.com/file/d/1xLNza6S8Iz2MqSlMJnL38FPqTQhGnqfY/view?usp=share_link) 
+(Finetuned the base model for 80,000 steps on (horizontal part of) root control objective)
+* [left_wrist_control](https://drive.google.com/file/d/17h98FQhu6dFj70YCopFHT4sL6jZOf42U/view?usp=share_link)
+(Finetuned the base model for 80,000 steps on left wrist control objective)
+* [right_foot_control](https://drive.google.com/file/d/1xLNza6S8Iz2MqSlMJnL38FPqTQhGnqfY/view?usp=share_link)
+(Finetuned the base model for 80,000 steps on right foor control objective)
+
+</details>
 
 ## Motion Synthesis 
 <details>
@@ -204,7 +215,44 @@ python -m sample.two_person_text2motion --model_path ./save/humanml_trans_enc_51
 
 </details>
 
-**Fine-tuned motion control** - ETA May 23
+<details>
+  <summary><b>Fine-tuned motion control</b></summary>
+
+**Horizontal Root Control**
+
+Sample the horizontal part of the root trajectory from the test set of HumanML3D, and generate a motion with the given trajectory (note that the vertical part of the trajectory is predicted by the model). To make the generation unconditioned on text we add `--guidance_param 0`.
+```shell
+python -m sample.finetuned_motion_control --model_path save/root_horizontal_finetuned/model000280000.pt --guidance_param 0
+```
+
+It will look something like this:
+
+![example](assets/Fine-tuned_motion_control/root_control_example.gif)
+
+Use `--show_input` if you wish to plot the motion from which the control features were taken from.
+
+Add a text condition with `--text_condition`. Note that by default, we use classifier-free-guidance with scale of 2.5.
+```shell
+python -m sample.finetuned_motion_control --model_path save/root_horizontal_finetuned/model000280000.pt --text_condition "a person is raising hands"
+```
+
+**Left Wrist Control**
+
+Sample the relative trajectory of the left wrist w.r.t the root trajectory from the test set of HumanML3D, and generate a motion with the given left wrist relative trajectory. To make the generation unconditioned on text we add `--guidance_param 0`.
+```shell
+python -m sample.finetuned_motion_control --model_path save/left_wrist_finetuned/model000280000.pt --guidance_param 0
+```
+
+It will look something like this:
+
+![example](assets/Fine-tuned_motion_control/left_wrist_control_example.gif)
+
+Add a text condition with `--text_condition`. Note that by default, we use classifier-free-guidance with scale of 2.5.
+```shell
+python -m sample.finetuned_motion_control --model_path save/left_wrist_finetuned/model000280000.pt --text_condition "a person is walking in a circle"
+```
+</details>
+
 
 **You may also define:**
 * `--device` id.
@@ -281,7 +329,21 @@ python -m train.train_mdm_multi --pretrained_path ./save/humanml_trans_enc_512_p
 
 </details>
 
-**Fine-tuned motion control** - ETA May 23
+<details>
+  <summary><b>Finetuned Motion Control</b></summary>
+
+Train a model for left wrist control from scratch on HumanML3D dataset.
+```shell
+python -m train.train_mdm_motion_control --save_dir save/left_wrist_finetuned --dataset humanml --inpainting_mask left_wrist
+```
+
+
+Finetune a base model for left wrist control on HumanML3D dataset. We advise setting `--save_interval` to 10,000 to have it saved more frequently, as this is a finetune and not training from scratch.
+```shell
+python -m train.train_mdm_motion_control --save_dir save/left_wrist_finetuned --dataset humanml --inpainting_mask left_wrist --resume_checkpoint save/humanml_trans_enc_512/model000200000.pt --save_interval 10_000
+```
+
+</details>
 
 * Use `--device` to define GPU id.
 * Add `--train_platform_type {ClearmlPlatform, TensorboardPlatform}` to track results with either [ClearML](https://clear.ml/) or [Tensorboard](https://www.tensorflow.org/tensorboard).
@@ -305,8 +367,19 @@ python -m eval.eval_multi --model_path ./save/pw3d_prefix/model000240000.pt
 
 </details>
 
-**Fine-tuned motion control** - ETA May 23
+<details>
 
+<summary><b>Fine-tuned motion control</b></summary>
+
+Evaluate the motion control models on the horizontal part of trajectories sampled from the test set of HumanML3D dataset.
+```shell
+python -m eval.eval_finetuned_motion_control --model_path save/root_horizontal_finetuned/model000280000.pt --replication_times 10 --overwrite
+```
+
+This code should produce a file named `eval_humanml_root_horizontal_finetuned_000280000_gscale2.5_mask_root_horizontal_wo_mm.log`, or generally:
+`eval_humanml\_<model_name>\_gscale<guidance_free_scale>\_mask\_<name_of_control_features>_<evaluation_mode>.log`
+
+</details>
 
 ## Acknowledgments
 
@@ -318,7 +391,7 @@ that our code is based on:
 [MotionCLIP](https://github.com/GuyTevet/MotionCLIP), 
 [text-to-motion](https://github.com/EricGuo5513/text-to-motion), 
 [actor](https://github.com/Mathux/ACTOR), 
-[joints2smpl](https://github.com/wangsen1312/joints2smpl).
+[joints2smpl](https://github.com/wangsen1312/joints2smpl),
 [TEACH](https://github.com/athn-nik/teach).
 
 ## License

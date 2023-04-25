@@ -240,7 +240,7 @@ class GaussianDiffusion:
         )
         return mean, variance, log_variance
 
-    def q_sample(self, x_start, t, noise=None):
+    def q_sample(self, x_start, t, noise=None, model_kwargs=None):
         """
         Diffuse the dataset for a given number of diffusion steps.
 
@@ -752,10 +752,10 @@ class GaussianDiffusion:
         if init_image is not None:
             my_t = th.ones([shape[0]], device=device, dtype=th.long) * indices[0]
             if predict_two_person:
-                img[0] = self.q_sample(init_image[0].to(device), my_t, img[0])
-                img[1] = self.q_sample(init_image[1].to(device), my_t, img[1])
+                img[0] = self.q_sample(init_image[0].to(device), my_t, img[0], model_kwargs=model_kwargs)
+                img[1] = self.q_sample(init_image[1].to(device), my_t, img[1], model_kwargs=model_kwargs)
             else:
-                img = self.q_sample(init_image, my_t, img)
+                img = self.q_sample(init_image, my_t, img, model_kwargs=model_kwargs)
 
         if progress:
             # Lazy import so that we don't depend on tqdm.
@@ -1107,7 +1107,7 @@ class GaussianDiffusion:
 
         if init_image is not None:
             my_t = th.ones([shape[0]], device=device, dtype=th.long) * indices[0]
-            img = self.q_sample(init_image, my_t, img)
+            img = self.q_sample(init_image, my_t, img, model_kwargs=model_kwargs)
 
         if progress:
             # Lazy import so that we don't depend on tqdm.
@@ -1300,7 +1300,7 @@ class GaussianDiffusion:
 
         if init_image is not None:
             my_t = th.ones([shape[0]], device=device, dtype=th.long) * indices[0]
-            img = self.q_sample(init_image, my_t, img)
+            img = self.q_sample(init_image, my_t, img, model_kwargs=model_kwargs)
 
         if progress:
             # Lazy import so that we don't depend on tqdm.
@@ -1395,11 +1395,11 @@ class GaussianDiffusion:
             model_kwargs = {}
         if noise is None:
             noise = th.randn_like(x_start)
-        x_t = self.q_sample(x_start, t, noise=noise)
+        x_t = self.q_sample(x_start, t, noise=noise, model_kwargs=model_kwargs)
 
         if hasattr(model.model, "is_multi") and model.model.is_multi:
             noise2 = th.randn_like(x_start)
-            model_kwargs['y']['other_motion'] = self.q_sample(model_kwargs['y']['other_motion'], t, noise=noise2)
+            model_kwargs['y']['other_motion'] = self.q_sample(model_kwargs['y']['other_motion'], t, noise=noise2, model_kwargs=model_kwargs)
 
         terms = {}
 
@@ -1723,7 +1723,7 @@ class GaussianDiffusion:
         for t in list(range(self.num_timesteps))[::-1]:
             t_batch = th.tensor([t] * batch_size, device=device)
             noise = th.randn_like(x_start)
-            x_t = self.q_sample(x_start=x_start, t=t_batch, noise=noise)
+            x_t = self.q_sample(x_start=x_start, t=t_batch, noise=noise, model_kwargs=model_kwargs)
             # Calculate VLB term at the current timestep
             with th.no_grad():
                 out = self._vb_terms_bpd(
