@@ -9,7 +9,7 @@ import os
 import numpy as np
 import torch
 from utils.parser_util import generate_multi_args
-from utils.model_util import load_model
+from utils.model_util import create_model_and_diffusion, load_model
 from utils import dist_util
 from model.cfg_sampler import ClassifierFreeSampleModel
 from data_loaders.get_data import get_dataset_loader
@@ -65,7 +65,10 @@ def main():
     total_num_samples = args.num_samples * args.num_repetitions
 
     print("Creating model and diffusion...")
-    model, diffusion = load_model(args, data, dist_util.dev(), ModelClass=ComMDM)
+    if not args.sample_gt:
+        model, diffusion = load_model(args, data, dist_util.dev(), ModelClass=ComMDM)
+    else:
+        model, diffusion = create_model_and_diffusion(args, data, ModelClass=ComMDM)
 
     if is_using_data:
         iterator = iter(data)
@@ -89,9 +92,9 @@ def main():
             model_kwargs['y']['scale'] = torch.ones(args.batch_size, device=dist_util.dev()) * args.guidance_param
         
         model_kwargs['y'] = {key: val.to(dist_util.dev()) if torch.is_tensor(val) else val for key, val in model_kwargs['y'].items()}
-        sample_fn = diffusion.p_sample_loop
 
         if not args.sample_gt:
+            sample_fn = diffusion.p_sample_loop
             sample = sample_fn(
                 model,
                 (args.batch_size, model.njoints, model.nfeats, n_frames+1),

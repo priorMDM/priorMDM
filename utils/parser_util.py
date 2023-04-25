@@ -14,6 +14,15 @@ def parse_and_load_from_model(parser, **kwargs):
     args = parser.parse_args()
     return load_from_model(args, parser, **kwargs)
 
+def get_model_path_from_args():
+    try:
+        dummy_parser = ArgumentParser()
+        dummy_parser.add_argument('model_path')
+        dummy_args, _ = dummy_parser.parse_known_args()
+        return dummy_args.model_path
+    except:
+        raise ValueError('model_path argument must be specified.')
+
 def load_from_model(args, parser, task=''):
     args_to_overwrite = []
     loaded_groups = ['dataset', 'model', 'diffusion']
@@ -21,7 +30,7 @@ def load_from_model(args, parser, task=''):
         loaded_groups.append('multi_person')
     elif task == 'inpainting' and args.inpainting_mask == '':
         loaded_groups.append('inpainting')
-    model_path = args.model_path
+    model_path = get_model_path_from_args()
     
     for group_name in loaded_groups:
         args_to_overwrite += get_args_per_group_name(parser, args, group_name)
@@ -387,7 +396,7 @@ def edit_multi_args():
     add_sampling_options(parser)
     add_multi_options(parser)
     add_edit_options(parser)
-    return parse_and_load_from_model(parser, multi=True)
+    return parse_and_load_from_model(parser, task='multi')
 
 
 def evaluation_parser():

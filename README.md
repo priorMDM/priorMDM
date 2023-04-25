@@ -373,7 +373,7 @@ python -m eval.eval_multi --model_path ./save/pw3d_prefix/model000240000.pt
 
 Evaluate the motion control models on the horizontal part of trajectories sampled from the test set of HumanML3D dataset.
 ```shell
-python -m eval.eval_finetuned_motion_control --model_path save/root_horizontal_finetuned/model000280000.pt --replication_times 10 --overwrite
+python -m eval.eval_finetuned_motion_control --model_path save/root_horizontal_finetuned/model000280000.pt --replication_times 10
 ```
 
 This code should produce a file named `eval_humanml_root_horizontal_finetuned_000280000_gscale2.5_mask_root_horizontal_wo_mm.log`, or generally:
