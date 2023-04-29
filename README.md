@@ -19,6 +19,8 @@ Please visit our [**webpage**](https://priormdm.github.io/priorMDM-page/) for mo
 
 ## News
 
+📢 **29/Apr/2023** - Evaluation release of the long-motions scripts, including both datasets (BABEL & HumanML3D) - please check the updated readme.
+
 📢 **25/Apr/2023** - Full release of the fine-tuned motion control scripts.
 
 📢 **14/Apr/2023** - First release - DoubleTake/ComMDM - Training and generation with pre-trained models is available.
