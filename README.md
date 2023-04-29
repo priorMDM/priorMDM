@@ -148,7 +148,7 @@ Download the model(s) you wish to use, then unzip and place it in `./save/`.
 (Finetuned the base model for 80,000 steps on (horizontal part of) root control objective)
 * [left_wrist_control](https://drive.google.com/file/d/17h98FQhu6dFj70YCopFHT4sL6jZOf42U/view?usp=share_link)
 (Finetuned the base model for 80,000 steps on left wrist control objective)
-* [right_foot_control](https://drive.google.com/file/d/1xLNza6S8Iz2MqSlMJnL38FPqTQhGnqfY/view?usp=share_link)
+* [right_foot_control](https://drive.google.com/file/d/1QqHAYZ3hbDtsHwJ2Gy4nsfgMwaHvnSOq/view?usp=share_link)
 (Finetuned the base model for 80,000 steps on right foor control objective)
 
 </details>
