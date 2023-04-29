@@ -880,9 +880,8 @@ class MotionDatasetV2(data.Dataset):
 class BABEL_MotionDatasetV2(BABEL):
 
     def __init__(self, split, datapath, transforms, opt, mean, std, sampler, mode, **kwargs):
-        # super(BABEL, self, split, datapath, transforms).__init__()
         BABEL.__init__(self, datapath=datapath, transforms=transforms, split=split,  sampler=sampler,
-                       parse_tokens=False, mode=mode)  # Tokens are not needed
+                       parse_tokens=False, mode=mode, **kwargs)  # Tokens are not needed
         self.opt = opt
         self.max_length = 20
         self.pointer = 0
@@ -897,8 +896,6 @@ class BABEL_MotionDatasetV2(BABEL):
 
         keyid = self._split_index[item]
         batch = self.load_keyid(keyid, mode='train')
-        # motion = batch['features_1_with_transition']
-        # m_length = batch['length_1_with_transition']
         motion_type = MOTION_TYPES[random.randint(0, len(MOTION_TYPES)-1)]
         motion = batch['features' + motion_type]
         m_length = batch['length' + motion_type]
@@ -1134,12 +1131,12 @@ class PW3D(HumanML3D):
 
 # A wrapper class for t2m original dataset for MDM purposes
 class BABEL_eval(data.Dataset):
-    def __init__(self, load_mode, datapath, transforms, mode, opt, split="train", **kwargs):
+    def __init__(self, load_mode, datapath, transforms, sampler, mode, opt, split="train", **kwargs):
         self.load_mode = load_mode
 
         self.split = split
         self.datapath = datapath
-        abs_base_path = f'./priorMDM/'
+        abs_base_path = f'.'
 
         if opt is None:
             self.opt_path = './dataset/humanml_opt.txt'
@@ -1152,7 +1149,7 @@ class BABEL_eval(data.Dataset):
             opt.motion_dir = pjoin(abs_base_path, opt.motion_dir)
             opt.text_dir = pjoin(abs_base_path, opt.text_dir)
             opt.model_dir = None
-            opt.checkpoints_dir = '.' # pjoin(abs_base_path, opt.checkpoints_dir)
+            opt.checkpoints_dir = '.'
             opt.data_root = pjoin(abs_base_path, opt.data_root)
             opt.save_root = pjoin(abs_base_path, opt.save_root)
             opt.meta_dir = './dataset'
@@ -1161,15 +1158,15 @@ class BABEL_eval(data.Dataset):
             opt.dataset_name = 'babel'
             opt.decomp_name = 'Decomp_SP001_SM001_H512_babel_2700epoch'
             opt.meta_root = pjoin(opt.checkpoints_dir, opt.dataset_name, 'motion1', 'meta')
-            opt.min_motion_length = 10  # must be at least window size
-            opt.max_motion_length = 480
+            opt.min_motion_length = sampler.min_len # must be at least window size
+            opt.max_motion_length = sampler.max_len
         self.opt = opt
 
         print('Loading dataset %s ...' % opt.dataset_name)
 
         self.dataset_name = opt.dataset_name
         self.dataname = opt.dataset_name
-        self.sampler = FrameSampler(min_len=opt.min_motion_length, max_len=opt.max_motion_length)
+        self.sampler = sampler
         self.transforms = transforms
         self.mean = np.zeros([opt.dim_pose], dtype=np.float32)  # data is already normalized
         self.std = np.ones([opt.dim_pose], dtype=np.float32)  # data is already normalized
@@ -1183,7 +1180,8 @@ class BABEL_eval(data.Dataset):
             transforms=self.transforms,
             mode=mode,
             opt=self.opt,
-            mean=self.mean, std=self.std, w_vectorizer=self.w_vectorizer, sampler=self.sampler
+            mean=self.mean, std=self.std, w_vectorizer=self.w_vectorizer, sampler=self.sampler,
+            short_db=kwargs.get('short_db', False), cropping_sampler=kwargs.get('cropping_sampler', False)
         )
         self.num_actions = 1  # dummy placeholder
 

@@ -630,10 +630,11 @@ class CompMDMUnfoldingGeneratedDataset(Dataset):
                         model_kwargs['y']['scale'] = torch.ones(batch_size, device=dist_util.dev()) * scale
                     samples_per_rep_list, samples_type = double_take_arb_len(args, diffusion, model, model_kwargs,
                                                                      n_frames=n_frames, eval_mode=True)
-                    if args.double_take:
-                        all_samples = samples_per_rep_list[1]  # we only do one rep
-                    else:
-                        all_samples = samples_per_rep_list[0]  # we only do one rep
+                    # if args.double_take:
+                    #     all_samples = samples_per_rep_list[1]  # we only do one rep
+                    # else:
+                    #     all_samples = samples_per_rep_list[0]  # we only do one rep
+                    all_samples = samples_per_rep_list[0]  # we only do one rep
                     sample = all_samples
                     step_sizes = np.zeros(len(model_kwargs['y']['lengths']), dtype=int)
                     for ii, len_i in enumerate(model_kwargs['y']['lengths']):

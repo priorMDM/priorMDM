@@ -50,7 +50,7 @@ def get_collate_fn(name, load_mode='train'):
 
 def get_dataset(name, num_frames, split='train', load_mode='train', batch_size=None, opt=None, short_db=False, cropping_sampler=False, size=None):
     DATA = get_dataset_class(name, load_mode)
-    if name in ["humanml", "kit", "pw3d"]:
+    if name in ["humanml", "pw3d"]:
         dataset = DATA(split=split, num_frames=num_frames, load_mode=load_mode, size=size)
     elif name == "babel":
         from data_loaders.amass.transforms import SlimSMPLTransform

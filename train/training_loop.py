@@ -91,7 +91,7 @@ class TrainLoop:
                                             load_mode='eval')
 
             self.eval_gt_data = get_dataset_loader(name=args.dataset, batch_size=args.eval_batch_size, num_frames=args.num_frames,
-                                                   split=args.eval_split,
+                                                   split=args.eval_split, short_db=args.short_db,
                                                    load_mode='gt')
             self.eval_wrapper = EvaluatorMDMWrapper(args.dataset, dist_util.dev())
             self.eval_data = {

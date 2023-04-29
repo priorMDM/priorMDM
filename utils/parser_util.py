@@ -26,17 +26,17 @@ def get_model_path_from_args():
 def load_from_model(args, parser, task=''):
     args_to_overwrite = []
     loaded_groups = ['dataset', 'model', 'diffusion']
-    if task == 'multi':
+    if task in ['multi_sample', 'multi_train']:
         loaded_groups.append('multi_person')
     elif task == 'inpainting' and args.inpainting_mask == '':
         loaded_groups.append('inpainting')
-    model_path = get_model_path_from_args()
     
     for group_name in loaded_groups:
         args_to_overwrite += get_args_per_group_name(parser, args, group_name)
 
+    args.model_path = args.model_path if task != 'multi_train' else args.pretrained_path
     # load args from model
-    args_path = os.path.join(os.path.dirname(model_path), 'args.json')
+    args_path = os.path.join(os.path.dirname(args.model_path), 'args.json')
     assert os.path.exists(args_path), 'Arguments json file was not found!'
     with open(args_path, 'r') as fr:
         model_args = json.load(fr)
@@ -328,7 +328,7 @@ def train_multi_args():
     add_base_options(parser)
     add_multi_options(parser)
     add_training_options(parser)
-    return parse_and_load_from_model(parser, task='multi')
+    return parse_and_load_from_model(parser, task='multi_train')
 
 def train_inpainting_args():
     parser = ArgumentParser()
@@ -347,7 +347,7 @@ def generate_multi_args():
     add_sampling_options(parser)
     add_multi_options(parser)
     add_generate_options(parser)
-    return parse_and_load_from_model(parser, task='multi')
+    return parse_and_load_from_model(parser, task='multi_sample')
 
 def generate_args():
     parser = ArgumentParser()
@@ -396,7 +396,7 @@ def edit_multi_args():
     add_sampling_options(parser)
     add_multi_options(parser)
     add_edit_options(parser)
-    return parse_and_load_from_model(parser, task='multi')
+    return parse_and_load_from_model(parser, task='multi_sample')
 
 
 def evaluation_parser():
@@ -424,7 +424,7 @@ def evaluation_multi_parser():
     add_base_options(parser)
     add_multi_options(parser)
     add_evaluation_options(parser)
-    return parse_and_load_from_model(parser, task='multi')
+    return parse_and_load_from_model(parser, task='multi_sample')
 
 def evaluation_inpainting_parser():
     parser = ArgumentParser()

@@ -121,7 +121,7 @@ def build_evaluators(opt):
     if opt['dataset_name'] == 'babel':
         # model_name = 'text_mot_match_babel_bs64_pretrained_latest_rerun'
         model_name = 'text_mot_match_babel_random_motion_bs64'
-        opt['checkpoints_dir'] = '.'
+        opt['checkpoints_dir'] = './dataset'
 
     checkpoint = torch.load(pjoin(opt['checkpoints_dir'], ckpt_dir, model_name, 'model', 'finest.tar'),
                             map_location=opt['device'])
