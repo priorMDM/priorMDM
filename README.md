@@ -13,7 +13,7 @@ Please visit our [**webpage**](https://priormdm.github.io/priorMDM-page/) for mo
 
 |  | Training | Generation | Evaluation |
 | --- | ----------- | ----------- | ----------- |
-| **DoubleTake (long motion)** | ✅ | ✅ | ETA May 23 |
+| **DoubleTake (long motion)** | ✅ | ✅ | ✅ |
 | **ComMDM (two-person)** | ✅ | ✅ | ✅ |
 | **Fine-tuned motion control** | ✅ | ✅ | ✅ |
 
@@ -99,6 +99,8 @@ cp -r ../HumanML3D/HumanML3D ./dataset/HumanML3D
 **BABEL dataset**
 
 Download the processed version [here](https://drive.google.com/file/d/18a4eRh8mbIFb55FMHlnmI8B8tSTkbp4t/view?usp=share_link), and place it at `./dataset/babel`
+
+Download the following for evaluation [here](https://drive.google.com/file/d/1rQWTzTYG6aFiIYHyULlrtUAUvndBDyuD/view?usp=share_link), and place is at `./dataset/babel`
 
 **SMPLH dependencies**
 
@@ -352,7 +354,32 @@ python -m train.train_mdm_motion_control --save_dir save/left_wrist_finetuned --
 
 ## Evaluate
 
-**DoubleTake (long motions)** - ETA May 23
+<details>
+<summary><b>DoubleTake (long motions)</b></summary>
+
+To reproduce humanML3D evaluation over the motion run:
+
+```shell
+python -m eval.eval_multi --model_path ./save/my_humanml_trans_enc_512/model000200000.pt --num_unfoldings 2 --handshake_size 20 --transition_margins 40  --eval_on motion --blend_len 10
+```
+
+To reproduce humanML3D evaluation over the transiton run:
+
+```shell
+python -m eval.eval_multi --model_path ./save/my_humanml_trans_enc_512/model000200000.pt --num_unfoldings 2 --handshake_size 20 --transition_margins 40  --eval_on transition --blend_len 10
+```
+
+To reproduce BABEL evaluation over the motion run:
+
+```shell
+python -m eval.eval_multi --model_path ./save/Babel_TrasnEmb_GeoLoss//model001250000.pt --num_unfoldings 2 --cropping_sampler --handshake_size 30 --transition_margins 40  --eval_on motion --blend_len 10
+```
+
+To reproduce BABEL evaluation over the transiton run:
+
+```shell
+python -m eval.eval_multi --model_path ./save/Babel_TrasnEmb_GeoLoss//model001250000.pt --num_unfoldings 2 --cropping_sampler --handshake_size 30 --transition_margins 40  --eval_on transition --blend_len 10
+```
 
 <details>
 <summary><b>ComMDM (two-person)</b></summary>
