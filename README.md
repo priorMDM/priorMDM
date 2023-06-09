@@ -382,6 +382,7 @@ To reproduce BABEL evaluation over the transiton run:
 ```shell
 python -m eval.eval_multi --model_path ./save/Babel_TrasnEmb_GeoLoss//model001250000.pt --num_unfoldings 2 --cropping_sampler --handshake_size 30 --transition_margins 40  --eval_on transition --blend_len 10
 ```
+</details>
 
 <details>
 <summary><b>ComMDM (two-person)</b></summary>
