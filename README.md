@@ -106,8 +106,7 @@ Download the following for evaluation [here](https://drive.google.com/file/d/1rQ
 
 **SMPLH dependencies**
 
-Download [here](https://drive.google.com/file/d/1zHTQ1VrVgr-qGl_ahc0UDgHlXgnwx_lM/view?usp=share_link), and place it at `./bodymodels`
-
+Download [here](https://drive.google.com/file/d/1zHTQ1VrVgr-qGl_ahc0UDgHlXgnwx_lM/view?usp=share_link), and place it at `./body_models`
 
 </details>
 
