@@ -255,6 +255,24 @@ Add a text condition with `--text_condition`. Note that by default, we use class
 ```shell
 python -m sample.finetuned_motion_control --model_path save/left_wrist_finetuned/model000280000.pt --text_condition "a person is walking in a circle"
 ```
+
+
+**Left Wrist + Right Foot Control With Model Blending**
+
+Sample the relative trajectory of the left wrist w.r.t the root trajectory from the test set of HumanML3D, and generate a motion with the given left wrist relative trajectory. To make the generation unconditioned on text we add `--guidance_param 0`.
+```shell
+python -m sample.finetuned_motion_control --model_path save/left_wrist_finetuned/model000280000.pt,save/right_foot_finetuned/model000280000.pt --guidance_param 0
+```
+
+It will look something like this:
+
+![example](assets/Fine-tuned_motion_control/left_wrist_right_foot_control_example.gif)
+
+Add a text condition with `--text_condition`. Note that by default, we use classifier-free-guidance with scale of 2.5.
+```shell
+python -m sample.finetuned_motion_control --model_path save/left_wrist_finetuned/model000280000.pt,save/right_foot_finetuned/model000280000.pt --text_condition "a person is walking in a circle"
+```
+
 </details>
 
 
