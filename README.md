@@ -9,6 +9,19 @@ Please visit our [**webpage**](https://priormdm.github.io/priorMDM-page/) for mo
 
 ![teaser](https://github.com/priorMDM/priorMDM-page/raw/main/static/figures/teaser.gif)
 
+#### Bibtex
+If you find this code useful in your research, please cite:
+
+```
+@article{shafir2023human,
+  title={Human motion diffusion as a generative prior},
+  author={Shafir, Yonatan and Tevet, Guy and Kapon, Roy and Bermano, Amit H},
+  journal={arXiv preprint arXiv:2303.01418},
+  year={2023}
+}
+```
+
+
 ## Release status
 
 |  | Training | Generation | Evaluation |
