@@ -393,25 +393,25 @@ python -m train.train_mdm_motion_control --save_dir save/left_wrist_finetuned --
 To reproduce humanML3D evaluation over the motion run:
 
 ```shell
-python -m eval.eval_multi --model_path ./save/my_humanml_trans_enc_512/model000200000.pt --num_unfoldings 2 --handshake_size 20 --transition_margins 40  --eval_on motion --blend_len 10
+python -m eval.eval_humanml_double_take --model_path ./save/my_humanml_trans_enc_512/model000200000.pt --num_unfoldings 2 --handshake_size 20 --transition_margins 40  --eval_on motion --blend_len 10
 ```
 
 To reproduce humanML3D evaluation over the transiton run:
 
 ```shell
-python -m eval.eval_multi --model_path ./save/my_humanml_trans_enc_512/model000200000.pt --num_unfoldings 2 --handshake_size 20 --transition_margins 40  --eval_on transition --blend_len 10
+python -m eval.eval_humanml_double_take --model_path ./save/my_humanml_trans_enc_512/model000200000.pt --num_unfoldings 2 --handshake_size 20 --transition_margins 40  --eval_on transition --blend_len 10
 ```
 
 To reproduce BABEL evaluation over the motion run:
 
 ```shell
-python -m eval.eval_multi --model_path ./save/Babel_TrasnEmb_GeoLoss//model001250000.pt --num_unfoldings 2 --cropping_sampler --handshake_size 30 --transition_margins 40  --eval_on motion --blend_len 10
+python -m eval.eval_babel --model_path ./save/Babel_TrasnEmb_GeoLoss//model001250000.pt --num_unfoldings 2 --cropping_sampler --handshake_size 30 --transition_margins 40  --eval_on motion --blend_len 10
 ```
 
 To reproduce BABEL evaluation over the transiton run:
 
 ```shell
-python -m eval.eval_multi --model_path ./save/Babel_TrasnEmb_GeoLoss//model001250000.pt --num_unfoldings 2 --cropping_sampler --handshake_size 30 --transition_margins 40  --eval_on transition --blend_len 10
+python -m eval.eval_babel --model_path ./save/Babel_TrasnEmb_GeoLoss//model001250000.pt --num_unfoldings 2 --cropping_sampler --handshake_size 30 --transition_margins 40  --eval_on transition --blend_len 10
 ```
 </details>
 
