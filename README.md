@@ -9,6 +9,19 @@ Please visit our [**webpage**](https://priormdm.github.io/priorMDM-page/) for mo
 
 ![teaser](https://github.com/priorMDM/priorMDM-page/raw/main/static/figures/teaser.gif)
 
+#### Bibtex
+If you find this code useful in your research, please cite:
+
+```
+@article{shafir2023human,
+  title={Human motion diffusion as a generative prior},
+  author={Shafir, Yonatan and Tevet, Guy and Kapon, Roy and Bermano, Amit H},
+  journal={arXiv preprint arXiv:2303.01418},
+  year={2023}
+}
+```
+
+
 ## Release status
 
 |  | Training | Generation | Evaluation |
@@ -102,7 +115,9 @@ cp -r ../HumanML3D/HumanML3D ./dataset/HumanML3D
 
 Download the processed version [here](https://drive.google.com/file/d/18a4eRh8mbIFb55FMHlnmI8B8tSTkbp4t/view?usp=share_link), and place it at `./dataset/babel`
 
-Download the following for evaluation [here](https://drive.google.com/file/d/1rQWTzTYG6aFiIYHyULlrtUAUvndBDyuD/view?usp=share_link), and place is at `./dataset/babel`
+Download the following for evaluation [here](https://drive.google.com/file/d/1uTUthP5fzgRLF-q3WgVEQib54zG2ayFc/view?usp=sharing), and place it at `./dataset/babel`
+
+Download the following [here](https://drive.google.com/file/d/1PBlbxawaeFTxtKkKDsoJwQGuDTdp52DD/view?usp=sharing), and place it at `./dataset/babel`
 
 **SMPLH dependencies**
 
@@ -255,6 +270,24 @@ Add a text condition with `--text_condition`. Note that by default, we use class
 ```shell
 python -m sample.finetuned_motion_control --model_path save/left_wrist_finetuned/model000280000.pt --text_condition "a person is walking in a circle"
 ```
+
+
+**Left Wrist + Right Foot Control With Model Blending**
+
+Sample the relative trajectory of the left wrist w.r.t the root trajectory from the test set of HumanML3D, and generate a motion with the given left wrist relative trajectory. To make the generation unconditioned on text we add `--guidance_param 0`.
+```shell
+python -m sample.finetuned_motion_control --model_path save/left_wrist_finetuned/model000280000.pt,save/right_foot_finetuned/model000280000.pt --guidance_param 0
+```
+
+It will look something like this:
+
+![example](assets/Fine-tuned_motion_control/left_wrist_right_foot_control_example.gif)
+
+Add a text condition with `--text_condition`. Note that by default, we use classifier-free-guidance with scale of 2.5.
+```shell
+python -m sample.finetuned_motion_control --model_path save/left_wrist_finetuned/model000280000.pt,save/right_foot_finetuned/model000280000.pt --text_condition "a person is walking in a circle"
+```
+
 </details>
 
 
@@ -362,19 +395,20 @@ python -m train.train_mdm_motion_control --save_dir save/left_wrist_finetuned --
 To reproduce humanML3D evaluation over the motion run:
 
 ```shell
-python -m eval.eval_multi --model_path ./save/my_humanml_trans_enc_512/model000200000.pt --num_unfoldings 2 --handshake_size 20 --transition_margins 40  --eval_on motion --blend_len 10
+python -m eval.eval_humanml_double_take --model_path ./save/my_humanml_trans_enc_512/model000200000.pt --num_unfoldings 2 --handshake_size 20 --transition_margins 40  --eval_on motion --blend_len 10
 ```
 
 To reproduce humanML3D evaluation over the transiton run:
 
 ```shell
-python -m eval.eval_multi --model_path ./save/my_humanml_trans_enc_512/model000200000.pt --num_unfoldings 2 --handshake_size 20 --transition_margins 40  --eval_on transition --blend_len 10
+python -m eval.eval_humanml_double_take --model_path ./save/my_humanml_trans_enc_512/model000200000.pt --num_unfoldings 2 --handshake_size 20 --transition_margins 40  --eval_on transition --blend_len 10
 ```
 
 To reproduce BABEL evaluation over the motion run:
 
 ```shell
 python -m eval.eval_multi --model_path ./save/Babel_TrasnEmb_GeoLoss/model001250000.pt --num_unfoldings 2 --cropping_sampler --handshake_size 30 --transition_margins 40  --eval_on motion --blend_len 10
+
 ```
 
 To reproduce BABEL evaluation over the transiton run:

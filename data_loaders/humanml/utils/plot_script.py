@@ -103,7 +103,7 @@ def explicit_plot_3d_motion(save_path, kinematic_tree, joints, title, dataset, f
     elif dataset in ['humanact12', 'uestc', 'amass']:
         data *= -1.5 # reverse axes, scale for visualization
     elif dataset =='babel':
-        data *= -1.3
+        data *= 1.3
 
 
     fig = plt.figure(figsize=figsize)

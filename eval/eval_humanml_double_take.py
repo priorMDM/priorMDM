@@ -234,7 +234,7 @@ if __name__ == '__main__':
     args.batch_size = 32 # This must be 32! Don't change it! otherwise it will cause a bug in R precision calc!
     name = os.path.basename(os.path.dirname(args.model_path))
     niter = os.path.basename(args.model_path).replace('model', '').replace('.pt', '')
-    log_file = os.path.join(os.path.dirname(args.model_path), 'eval_humanml_FinalFINALLLLLL_{}_{}'.format(name, niter))
+    log_file = os.path.join(os.path.dirname(args.model_path), 'eval_humanml_{}_{}'.format(name, niter))
     if args.guidance_param != 1.:
         log_file += f'_gscale{args.guidance_param}'
     log_file += f'_{args.eval_on}'
@@ -300,7 +300,7 @@ if __name__ == '__main__':
 
     logger.log("Creating model and diffusion...")
     ModelClass = doubleTake_MDM if args.double_take else MDM
-    model, diffusion = load_model(args, data, dist_util.dev(), ModelClass=doubleTake_MDM)
+    model, diffusion = load_model(args, gen_loader, dist_util.dev(), ModelClass=doubleTake_MDM)
 
     eval_motion_loaders = {
         ################
