@@ -117,6 +117,8 @@ Download the processed version [here](https://drive.google.com/file/d/18a4eRh8mb
 
 Download the following for evaluation [here](https://drive.google.com/file/d/1uTUthP5fzgRLF-q3WgVEQib54zG2ayFc/view?usp=sharing), and place it at `./dataset/babel`
 
+Download the following [here](https://drive.google.com/file/d/1PBlbxawaeFTxtKkKDsoJwQGuDTdp52DD/view?usp=sharing), and place it at `./dataset/babel`
+
 **SMPLH dependencies**
 
 Download [here](https://drive.google.com/file/d/1zHTQ1VrVgr-qGl_ahc0UDgHlXgnwx_lM/view?usp=share_link), and place it at `./bodymodels`
