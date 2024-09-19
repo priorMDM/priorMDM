@@ -1,4 +1,4 @@
-# PriorMDM: Human Motion Diffusion as a Generative Prior
+# PriorMDM: Human Motion Diffusion as a Generative Prior [ICLR 2024]
 
 
 [![arXiv](https://img.shields.io/badge/arXiv-<2303.01418>-<COLOR>.svg)](https://arxiv.org/abs/2303.01418)
@@ -13,11 +13,11 @@ Please visit our [**webpage**](https://priormdm.github.io/priorMDM-page/) for mo
 If you find this code useful in your research, please cite:
 
 ```
-@article{shafir2023human,
-  title={Human motion diffusion as a generative prior},
-  author={Shafir, Yonatan and Tevet, Guy and Kapon, Roy and Bermano, Amit H},
-  journal={arXiv preprint arXiv:2303.01418},
-  year={2023}
+@inproceedings{shafir2024human,
+  title={Human Motion Diffusion as a Generative Prior},
+  author={Shafir, Yoni and Tevet, Guy and Kapon, Roy and Bermano, Amit Haim},
+  year={2024},
+  booktitle={The Twelfth International Conference on Learning Representations}
 }
 ```
 
